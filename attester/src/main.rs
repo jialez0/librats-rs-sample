@@ -1,15 +1,29 @@
-use lib::{get_evidence, AttestationEv};
 use anyhow::Result;
-use std::fs;
+use log::info;
+use clap::Parser;
+
+use std::net::SocketAddr;
+
+use crate::server::start_service;
+
+mod server;
+
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct Args {
+    #[clap(short, long, value_parser)]
+    ac_addr: String,
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let report_data = "test".as_bytes().to_vec();
-    let ev = get_evidence(report_data).await?;
+    env_logger::init();
+    let args = Args::parse();
 
-    fs::write("../../fixtures/quote", &ev.quote)?;
-    fs::write("../../fixtures/eventlog_info", &ev.eventlog_info)?;
-    fs::write("../../fixtures/eventlog_data", &ev.eventlog_data)?;
+    let ac_addr = args.ac_addr
+        .parse::<SocketAddr>()?;
 
-    Ok(())
+    info!("Listen to {}", ac_addr);
+
+    start_service(ac_addr).await
 }
